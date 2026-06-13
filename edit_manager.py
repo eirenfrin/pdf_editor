@@ -1,27 +1,80 @@
 from events.observer import Observer
 import consts as c
 import os
+import tkinter as tk
+from tkinter import ttk
 from PIL import Image, ImageTk, ImageOps
+from widgets.pdf_viewer import PdfViewer as Viewer
+from widgets.toolbar import Toolbar
+from pdf_model import PdfModel
+import fitz
 
-class EditManager(Observer):
-    def __init__(self, model, toolbar):
-        self.model = model
-        self.toolbar = toolbar
-        self.added_icons_storage = {}
+class EditManager():
+    def __init__(self, root):
+        self.root = root
 
-    def calculate_icon_canvas_params(self):
-        if self.toolbar.selected_icon[0]:
-            path = os.path.join(c.input_folder, self.toolbar.selected_icon[0])
-            img = Image.open(path)
-            img = img.resize((60, 60))
-            # img = ImageOps.exif_transpose(img)
-            img.save(os.path.join("temp", self.toolbar.selected_icon[0]))
-            tk_img = ImageTk.PhotoImage(img)
+        self.root.title("PDF miniEditor")
 
-            self.model.store_inserted_image_canvas_coords(self.toolbar.selected_icon[0], tk_img)
+        self.mainframe = ttk.Frame(self.root, padding=(3,3,3,3))
+        self.mainframe.grid(column=0, row=0)
+        self.mainframe.grid_columnconfigure(1, weight=1)
+        self.mainframe.grid_rowconfigure(0, weight=1)
+        self.mainframe.update_idletasks()
 
-    def update(self, event, data):
-        address, msg = event.split(":")
-        if address == "manager":
-            if msg == "add_photo":
-                self.calculate_icon_canvas_params()
+        self.model = PdfModel()
+        pdf_params = self.model.get_pdf_params()
+
+        self.pdf_viewer = Viewer(self.mainframe, self, pdf_params)
+        self.toolbar = Toolbar(self.mainframe, self)
+
+    def canvas_click_callback(self, x, y):
+        icon_filename = self.toolbar.selected_icon
+        if icon_filename:
+            if icon_filename not in self.model.icons_inserted_tk_imgs.keys():
+                tk_img = self.resize_icon(icon_filename) 
+                self.model.store_icon_ref(icon_filename, tk_img)
+
+            icon_model = self.model.store_inserted_icon(icon_filename, x, y)
+            inserted_id = self.pdf_viewer.insert_icon(x, y, icon_model.tk_img)
+            icon_model.set_id(inserted_id)
+
+
+    def resize_icon(self, filename):
+        path = os.path.join(c.input_folder, filename)
+        img = Image.open(path)
+        img = img.resize((60, 60))
+        # img = ImageOps.exif_transpose(img)
+        tk_img = ImageTk.PhotoImage(img)
+        return tk_img
+
+    def save_pdf(self):
+        for icon in self.model.icons_models:
+            page = self.model.doc[icon.page]
+
+            y_diff = self.model.page_height*icon.page
+            y_coord = icon.canvas_y - y_diff
+            size = 60
+            cx = icon.canvas_x + size / 2
+            cy = y_coord + size / 2
+            # cx, cy = fitz.Point(coords[1], y_coord) * page.derotation_matrix
+            cx, cy = fitz.Point(cx, cy) * page.derotation_matrix
+            
+            rect = fitz.Rect(
+                cx - size/2,
+                cy - size/2,
+                cx + size/2,
+                cy + size/2
+            )
+
+            r_angle = 0
+            if page.rotation == 90:
+                r_angle = 90
+
+            page.insert_image(
+                rect,
+                filename=os.path.join(c.input_folder, icon.filename),
+                keep_proportion=False,
+                rotate = r_angle
+            )
+        self.model.doc.save(os.path.join(c.output_folder, "edited.pdf"))
+        self.model.doc.close()

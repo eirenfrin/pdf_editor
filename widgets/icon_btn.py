@@ -10,4 +10,4 @@ class IconBtn(ttk.Button):
         self.grid(column=0, row=r, pady=5)
 
     def select_icon(self):
-        self.toolbar.track_selected_icon(self.icon_filename, self.image)
+        self.toolbar.track_selected_icon(self.icon_filename)

@@ -3,17 +3,18 @@ from tkinter import ttk
 from events.observer import Observer
 
 
-class PdfViewer(ttk.Frame, Observer):
-    def __init__(self, parent, model):
+class PdfViewer(ttk.Frame):
+    def __init__(self, parent, manager, pdf_params):
         super().__init__(parent)
-        self.grid(column=1, row=0, padx=20)
-        self.model = model
+        self.manager = manager
 
-        self.viewer = tk.Canvas(self, width=model.page_width, height=model.page_height)
+        self.grid(column=1, row=0, padx=20)
+
+        self.viewer = tk.Canvas(self, width=pdf_params["page_width"], height=pdf_params["page_height"])
         self.viewer.grid(row=0, column=0, sticky="nsew")
  
-        for page_num, top_coord in enumerate(model.pdf_pages_tops_coords):
-            self.viewer.create_image(0, top_coord, image=model.pdf_pages[page_num], anchor="nw")
+        for page_num, top_coord in enumerate(pdf_params["pdf_pages_tops_coords"]):
+            self.viewer.create_image(0, top_coord, image=pdf_params["pdf_pages"][page_num], anchor="nw")
 
         self.scrollbar = ttk.Scrollbar(self, orient="vertical", command=self.viewer.yview)
         self.scrollbar.grid(row=0, column=1, sticky="ns")
@@ -29,13 +30,13 @@ class PdfViewer(ttk.Frame, Observer):
         x = self.viewer.canvasx(event.x)
         y = self.viewer.canvasy(event.y)
         
-        self.model.store_canvas_coords(x, y)
+        self.manager.canvas_click_callback(x, y)
         
     def insert_icon(self, x, y, tk_img):
-        self.viewer.create_image(x, y, image=tk_img, anchor=tk.NW)
+        icon_id = self.viewer.create_image(x, y, image=tk_img, anchor=tk.NW)
 
-    def update(self, event, data):
-        address, msg = event.split(":")
-        if address == "viewer":
-            if msg == "add_photo":
-                self.insert_icon(*data)
+        return icon_id
+
+    def delete_icon(self, icon_id):
+        self.viewer.delete(icon_id)
+
