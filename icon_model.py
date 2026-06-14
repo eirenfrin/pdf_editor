@@ -12,3 +12,16 @@ class IconModel():
 
     def set_id(self, inserted_id):
         self.inserted_id = inserted_id
+
+    def get_model_size_pos(self):
+        return {
+            "width": self.width,
+            "height": self.height,
+            "canvas_x": self.canvas_x,
+            "canvas_y": self.canvas_y
+        }
+    
+    def update_pos(self, prop, new_value):
+        setattr(self, prop, new_value)
+
+        return (self.canvas_x, self.canvas_y)

@@ -15,7 +15,7 @@ class PdfModel():
         self.pdf_pages = []
         self.pdf_pages_tops_coords = [0]
 
-        self.icons_models = []
+        self.icons_models = {}
         self.icons_inserted_tk_imgs = {}
 
         self.create_output_folder()
@@ -52,10 +52,12 @@ class PdfModel():
     def store_icon_ref(self, filename, tk_img):
         self.icons_inserted_tk_imgs[filename] = tk_img
 
-    def store_inserted_icon(self, filename, x, y):
+    def store_inserted_icon_model(self, icon_model):
+        self.icons_models[icon_model.inserted_id] = icon_model
+
+    def generate_icon_model(self, filename, x, y):
         inserted_on_page = self.find_page_number(y)
         new_icon = IconModel(filename, self.icons_inserted_tk_imgs[filename], x, y, inserted_on_page)
-        self.icons_models.append(new_icon)
 
         return new_icon
 

@@ -34,10 +34,11 @@ class EditManager():
                 tk_img = self.resize_icon(icon_filename) 
                 self.model.store_icon_ref(icon_filename, tk_img)
 
-            icon_model = self.model.store_inserted_icon(icon_filename, x, y)
+            icon_model = self.model.generate_icon_model(icon_filename, x, y)
             inserted_id = self.pdf_viewer.insert_icon(x, y, icon_model.tk_img)
             icon_model.set_id(inserted_id)
-
+            self.model.store_inserted_icon_model(icon_model)
+            self.pdf_viewer.select_icon(inserted_id)
 
     def resize_icon(self, filename):
         path = os.path.join(c.input_folder, filename)
@@ -46,9 +47,17 @@ class EditManager():
         # img = ImageOps.exif_transpose(img)
         tk_img = ImageTk.PhotoImage(img)
         return tk_img
+    
+    def change_icon_params(self, prop, value):
+        new_pos = self.model.icons_models[self.pdf_viewer.selected_icon[0]].update_pos(prop, value)
+        self.pdf_viewer.change_icon_pos(*new_pos)
+    
+    def load_selected_icon_info(self, icon_id):
+        icon_model = self.model.icons_models[icon_id]
+        self.toolbar.populate_entries(icon_model.get_model_size_pos())
 
     def save_pdf(self):
-        for icon in self.model.icons_models:
+        for icon in self.model.icons_models.values():
             page = self.model.doc[icon.page]
 
             y_diff = self.model.page_height*icon.page
