@@ -25,3 +25,11 @@ class IconModel():
         setattr(self, prop, new_value)
 
         return (self.canvas_x, self.canvas_y)
+    
+    def update_size(self, prop, new_value):
+        setattr(self, prop, new_value)
+
+        return (self.width, self.height)
+    
+    def update_tk_img(self, new_tk_img):
+        self.tk_img = new_tk_img

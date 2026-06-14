@@ -31,10 +31,22 @@ class Toolbar(ttk.Frame):
         self.y_entry.grid(column=1, row=2)
         self.y_entry.bind("<Return>", self.on_change_y)
 
-        txt_btn = ttk.Button(self, text="add text")
-        txt_btn.grid(column=0, row=3, pady=5)
+        ttk.Label(self, text="width").grid(column=0, row=3, sticky=tk.W)
+        self.width = StringVar()
+        self.width_entry = ttk.Entry(self, width=7, textvariable=self.width)
+        self.width_entry.grid(column=1, row=3)
+        self.width_entry.bind("<Return>", self.on_change_w)
 
-        row_index = 4
+        ttk.Label(self, text="height").grid(column=0, row=4, sticky=tk.W)
+        self.height = StringVar()
+        self.height_entry = ttk.Entry(self, width=7, textvariable=self.height)
+        self.height_entry.grid(column=1, row=4)
+        self.height_entry.bind("<Return>", self.on_change_h)
+
+        txt_btn = ttk.Button(self, text="add text")
+        txt_btn.grid(column=0, row=5, pady=5)
+
+        row_index = 6
         for file in os.listdir(c.input_folder):
             if file.endswith((".png", ".jpg", ".jpeg")):
                 path = os.path.join(c.input_folder, file)
@@ -46,12 +58,17 @@ class Toolbar(ttk.Frame):
                 row_index += 1
 
     def on_change_x(self, event):
-        self.manager.change_icon_params("canvas_x", float(self.x.get()))
+        self.manager.change_icon_pos("canvas_x", float(self.x.get()))
 
     def on_change_y(self, event):
-        self.manager.change_icon_params("canvas_y", float(self.y.get()))
+        self.manager.change_icon_pos("canvas_y", float(self.y.get()))
 
-    
+    def on_change_w(self, event):
+        self.manager.change_icon_size("width", int(self.width.get()))
+
+    def on_change_h(self, event):
+        self.manager.change_icon_size("height", int(self.height.get()))
+
     def track_selected_icon(self, filename):
         if self.selected_icon == filename:
             self.selected_icon = None
@@ -61,7 +78,8 @@ class Toolbar(ttk.Frame):
     def populate_entries(self, icon_data):
         self.x.set(icon_data["canvas_x"])
         self.y.set(icon_data["canvas_y"])
-
+        self.width.set(icon_data["width"])
+        self.height.set(icon_data["height"])
 
     def save_pdf(self):
         self.manager.save_pdf()

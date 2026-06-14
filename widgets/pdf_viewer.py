@@ -45,6 +45,20 @@ class PdfViewer(ttk.Frame):
         x1, y1, x2, y2 = self.viewer.bbox(self.selected_icon[0])
         self.viewer.coords(self.selected_icon[1], x1, y1, x2, y2)
 
+    def change_icon_size(self, new_tk_img):
+        self.viewer.itemconfig(self.selected_icon[0], image=new_tk_img)
+        x1, y1, x2, y2 = self.viewer.bbox(self.selected_icon[0])
+
+        border_id = self.viewer.create_rectangle(
+            x1, y1, x2, y2,
+            outline="blue",
+            width=4
+        )
+        
+        self.viewer.tag_lower(border_id, self.selected_icon[0])
+        self.viewer.delete(self.selected_icon[1])
+        self.selected_icon = (self.selected_icon[0], border_id)
+
     
     def on_icon_click(self, event):
         icon_id = self.viewer.find_withtag("current")[0]

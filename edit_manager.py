@@ -31,7 +31,7 @@ class EditManager():
         icon_filename = self.toolbar.selected_icon
         if icon_filename:
             if icon_filename not in self.model.icons_inserted_tk_imgs.keys():
-                tk_img = self.resize_icon(icon_filename) 
+                tk_img = self.resize_icon(icon_filename, 60, 60) 
                 self.model.store_icon_ref(icon_filename, tk_img)
 
             icon_model = self.model.generate_icon_model(icon_filename, x, y)
@@ -40,15 +40,23 @@ class EditManager():
             self.model.store_inserted_icon_model(icon_model)
             self.pdf_viewer.select_icon(inserted_id)
 
-    def resize_icon(self, filename):
+    def resize_icon(self, filename, width, height):
         path = os.path.join(c.input_folder, filename)
-        img = Image.open(path)
-        img = img.resize((60, 60))
+        img = Image.open(path).convert("RGBA")
+        img = img.resize((width, height))
         # img = ImageOps.exif_transpose(img)
         tk_img = ImageTk.PhotoImage(img)
         return tk_img
     
-    def change_icon_params(self, prop, value):
+    def change_icon_size(self, prop, value):
+        icon_model = self.model.icons_models[self.pdf_viewer.selected_icon[0]]
+        new_size = icon_model.update_size(prop, value)
+        new_tk_img = self.resize_icon(icon_model.filename, *new_size)
+        self.model.store_icon_ref(self.pdf_viewer.selected_icon[0], new_tk_img)
+        icon_model.update_tk_img(new_tk_img)
+        self.pdf_viewer.change_icon_size(new_tk_img)
+
+    def change_icon_pos(self, prop, value):
         new_pos = self.model.icons_models[self.pdf_viewer.selected_icon[0]].update_pos(prop, value)
         self.pdf_viewer.change_icon_pos(*new_pos)
     
@@ -62,22 +70,27 @@ class EditManager():
 
             y_diff = self.model.page_height*icon.page
             y_coord = icon.canvas_y - y_diff
-            size = 60
-            cx = icon.canvas_x + size / 2
-            cy = y_coord + size / 2
+            cx = icon.canvas_x + icon.width / 2
+            cy = y_coord + icon.height / 2
             # cx, cy = fitz.Point(coords[1], y_coord) * page.derotation_matrix
             cx, cy = fitz.Point(cx, cy) * page.derotation_matrix
-            
-            rect = fitz.Rect(
-                cx - size/2,
-                cy - size/2,
-                cx + size/2,
-                cy + size/2
-            )
 
             r_angle = 0
+            if page.rotation == 0:
+                rect = fitz.Rect(
+                    cx - icon.width/2,
+                    cy - icon.height/2,
+                    cx + icon.width/2,
+                    cy + icon.height/2
+                )
             if page.rotation == 90:
                 r_angle = 90
+                rect = fitz.Rect(
+                    cx - icon.height/2,
+                    cy - icon.width/2,
+                    cx + icon.height/2,
+                    cy + icon.width/2
+                )
 
             page.insert_image(
                 rect,
