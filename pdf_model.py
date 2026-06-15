@@ -6,8 +6,9 @@ from events.subject import Subject
 from icon_model import IconModel
 
 class PdfModel():
-    def __init__(self):
+    def __init__(self, pdf_path=""):
         super().__init__()
+        self.pdf_path = pdf_path
         self.doc = None
         self.num_of_pages = 0
         self.page_width = 0
@@ -26,14 +27,14 @@ class PdfModel():
         os.makedirs(c.output_folder, exist_ok=True)
         
     def set_pdf_page_num_size(self):
-        pdf_path = os.path.join(c.input_folder, "long.pdf")
-        self.doc = fitz.open(pdf_path)
-        self.num_of_pages = len(self.doc)
+        if self.pdf_path:
+            self.doc = fitz.open(self.pdf_path)
+            self.num_of_pages = len(self.doc)
 
-        page = self.doc[0]
-        pix = page.get_pixmap()
-        self.page_width = pix.width
-        self.page_height = pix.height
+            page = self.doc[0]
+            pix = page.get_pixmap()
+            self.page_width = pix.width
+            self.page_height = pix.height
 
     def store_pages(self):
         for page_num in range(self.num_of_pages):
@@ -76,4 +77,8 @@ class PdfModel():
             "pdf_pages_tops_coords": self.pdf_pages_tops_coords,
             "pdf_pages": self.pdf_pages
         }
+    
+    def close_doc(self, doc):
+        if doc:
+            doc.close()
 

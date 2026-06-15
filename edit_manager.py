@@ -2,12 +2,17 @@ from events.observer import Observer
 import consts as c
 import os
 import tkinter as tk
-from tkinter import ttk
+from tkinter import ttk, filedialog
 from PIL import Image, ImageTk, ImageOps
 from widgets.pdf_viewer import PdfViewer as Viewer
 from widgets.toolbar import Toolbar
 from pdf_model import PdfModel
 import fitz
+
+# select pdf from file
+# add icons from file
+# select output folder and name edited file
+# insert text
 
 class EditManager():
     def __init__(self, root):
@@ -21,10 +26,8 @@ class EditManager():
         self.mainframe.grid_rowconfigure(0, weight=1)
         self.mainframe.update_idletasks()
 
-        self.model = PdfModel()
-        pdf_params = self.model.get_pdf_params()
-
-        self.pdf_viewer = Viewer(self.mainframe, self, pdf_params)
+        self.model = None
+        self.pdf_viewer = None
         self.toolbar = Toolbar(self.mainframe, self)
 
     def canvas_click_callback(self, x, y):
@@ -64,39 +67,70 @@ class EditManager():
         icon_model = self.model.icons_models[icon_id]
         self.toolbar.populate_entries(icon_model.get_model_size_pos())
 
+    def open_pdf(self):
+        file_path = filedialog.askopenfilename(
+            title="Open pdf",
+        )
+
+        if file_path.endswith(".pdf"):
+            previous_doc = None
+            if self.model:
+                previous_doc = self.model.doc
+            self.model = PdfModel(file_path)
+            pdf_params = self.model.get_pdf_params()
+            self.model.close_doc(previous_doc)
+
+            self.pdf_viewer = Viewer(self.mainframe, self, pdf_params)
+
+    def add_icon_btn(self):
+        file_path = filedialog.askopenfilename(
+            title="Add icon",
+        )
+        if file_path.endswith((".png", ".jpg", ".jpeg")):
+            return file_path
+
     def save_pdf(self):
-        for icon in self.model.icons_models.values():
-            page = self.model.doc[icon.page]
+        if self.model.pdf_path:
+            for icon in self.model.icons_models.values():
+                page = self.model.doc[icon.page]
 
-            y_diff = self.model.page_height*icon.page
-            y_coord = icon.canvas_y - y_diff
-            cx = icon.canvas_x + icon.width / 2
-            cy = y_coord + icon.height / 2
-            # cx, cy = fitz.Point(coords[1], y_coord) * page.derotation_matrix
-            cx, cy = fitz.Point(cx, cy) * page.derotation_matrix
+                y_diff = self.model.page_height*icon.page
+                y_coord = icon.canvas_y - y_diff
+                cx = icon.canvas_x + icon.width / 2
+                cy = y_coord + icon.height / 2
+                # cx, cy = fitz.Point(coords[1], y_coord) * page.derotation_matrix
+                cx, cy = fitz.Point(cx, cy) * page.derotation_matrix
 
-            r_angle = 0
-            if page.rotation == 0:
-                rect = fitz.Rect(
-                    cx - icon.width/2,
-                    cy - icon.height/2,
-                    cx + icon.width/2,
-                    cy + icon.height/2
+                r_angle = 0
+                if page.rotation == 0:
+                    rect = fitz.Rect(
+                        cx - icon.width/2,
+                        cy - icon.height/2,
+                        cx + icon.width/2,
+                        cy + icon.height/2
+                    )
+                if page.rotation == 90:
+                    r_angle = 90
+                    rect = fitz.Rect(
+                        cx - icon.height/2,
+                        cy - icon.width/2,
+                        cx + icon.height/2,
+                        cy + icon.width/2
+                    )
+
+                page.insert_image(
+                    rect,
+                    filename=os.path.join(c.input_folder, icon.filename),
+                    keep_proportion=False,
+                    rotate = r_angle
                 )
-            if page.rotation == 90:
-                r_angle = 90
-                rect = fitz.Rect(
-                    cx - icon.height/2,
-                    cy - icon.width/2,
-                    cx + icon.height/2,
-                    cy + icon.width/2
-                )
 
-            page.insert_image(
-                rect,
-                filename=os.path.join(c.input_folder, icon.filename),
-                keep_proportion=False,
-                rotate = r_angle
+            save_path = filedialog.asksaveasfilename(
+                title="Save edited pdf",
+                defaultextension=".pdf",
+                initialfile="edited.pdf",
+                filetypes=[("PDF files", "*.pdf")]
             )
-        self.model.doc.save(os.path.join(c.output_folder, "edited.pdf"))
-        self.model.doc.close()
+
+            if save_path:
+                self.model.doc.save(save_path)
