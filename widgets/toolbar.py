@@ -52,24 +52,32 @@ class Toolbar(ttk.Frame):
         txt_btn = ttk.Button(self, text="add text")
         txt_btn.grid(column=0, row=7, pady=5)
 
-        # self.outer_btns_container = ttk.Frame(self)
-        # self.outer_btns_container.grid(column=0, row=8, columnspan=2)
-        # self.btns_canvas_container = tk.Canvas(self.outer_btns_container)
-        # self.btns_canvas_container.grid(row=0, column=0)
+        self.outer_btns_container = ttk.Frame(self)
+        self.outer_btns_container.grid(column=0, row=8, columnspan=2)
+        self.btns_canvas_container = tk.Canvas(self.outer_btns_container, height=200, width=100)
+        self.btns_canvas_container.grid(row=0, column=0)
         
-        # self.inner_btns_container = ttk.Frame(self.btns_canvas_container, borderwidth=2, relief="solid")
+        self.inner_btns_container = ttk.Frame(self.btns_canvas_container)
 
-        # self.btns_canvas_container.create_window(
-        #     (0, 0),
-        #     window=self.inner_btns_container,
-        #     anchor="nw"
-        # )
+        self.btns_canvas_container.create_window(
+            (0, 0),
+            window=self.inner_btns_container,
+            anchor="nw"  
+        )
 
-        # self.scrollbar = ttk.Scrollbar(self.outer_btns_container, orient="vertical", command=self.btns_canvas_container.yview)
-        # self.scrollbar.grid(row=0, column=1, sticky=tk.NS)
+        self.scrollbar = ttk.Scrollbar(self.outer_btns_container, orient="vertical", command=self.btns_canvas_container.yview)
+        self.scrollbar.grid(row=0, column=1, sticky=tk.NS)
         
-        # self.btns_canvas_container.bind("<MouseWheel>", self.on_mousewheel)
-        # self.btns_canvas_container.configure(yscrollcommand=self.scrollbar.set, scrollregion=self.btns_canvas_container.bbox("all"))
+        self.btns_canvas_container.bind("<MouseWheel>", self.on_mousewheel)
+        self.inner_btns_container.bind("<MouseWheel>", self.on_mousewheel)
+        self.btns_canvas_container.configure(yscrollcommand=self.scrollbar.set)
+
+        self.inner_btns_container.bind(
+            "<Configure>",
+            lambda e: self.btns_canvas_container.configure(
+                scrollregion=self.btns_canvas_container.bbox("all")
+            )
+        )
 
         self.row_index = 8
 
@@ -80,7 +88,6 @@ class Toolbar(ttk.Frame):
         self.manager.open_pdf()
 
     def add_icon_btn(self):
-        print("added")
         image_path = self.manager.add_icon_btn()
         if image_path in self.btns.keys():
             return
@@ -89,7 +96,12 @@ class Toolbar(ttk.Frame):
         img = img.resize((60, 60))
         tk_img = ImageTk.PhotoImage(img)
             
-        self.btns[image_path] = IB(self, tk_img, image_path, self.row_index)
+        new_btn = IB(self.inner_btns_container, tk_img, image_path, self.row_index, self)
+        new_btn.bind("<MouseWheel>", self.on_mousewheel)
+        for child in new_btn.winfo_children():
+            child.bind("<MouseWheel>", self.on_mousewheel)
+
+        self.btns[image_path] = new_btn
         self.row_index += 1
 
     def on_change_x(self, event):
@@ -118,3 +130,6 @@ class Toolbar(ttk.Frame):
 
     def save_pdf(self):
         self.manager.save_pdf()
+
+    def delete_icon_btn(self, icon_filename):
+        self.btns.pop(icon_filename)

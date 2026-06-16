@@ -14,7 +14,6 @@ class PdfViewer(ttk.Frame):
         self.selected_icon = (None, None)
 
     def update_view(self, pdf_params):
-        print(pdf_params)
         self.viewer = tk.Canvas(self, width=pdf_params["page_width"], height=pdf_params["page_height"])
         self.viewer.grid(row=0, column=0, sticky="nsew")
  
