@@ -9,9 +9,14 @@ class PdfViewer(ttk.Frame):
         self.manager = manager
 
         self.grid(column=1, row=0, padx=20)
+
+        self.selected_icon = {
+            "icon_id": None,
+            "border_id": None
+        }
+        
         self.update_view(pdf_params)
 
-        self.selected_icon = (None, None)
 
     def update_view(self, pdf_params):
         self.viewer = tk.Canvas(self, width=pdf_params["page_width"], height=pdf_params["page_height"])
@@ -26,6 +31,8 @@ class PdfViewer(ttk.Frame):
         self.viewer.bind("<MouseWheel>", self.on_mousewheel)
         self.viewer.configure(yscrollcommand=self.scrollbar.set, scrollregion=self.viewer.bbox("all"))
         self.viewer.bind("<Button-1>", self.get_mouse_coords)
+        self.viewer.bind("<Delete>", self.delete_selected)
+        self.viewer.bind("<BackSpace>", self.delete_selected)
 
     def on_mousewheel(self, event):
         self.viewer.yview_scroll(-event.delta // 120, "units")
@@ -34,7 +41,7 @@ class PdfViewer(ttk.Frame):
         x = self.viewer.canvasx(event.x)
         y = self.viewer.canvasy(event.y)
         
-        self.manager.canvas_click_callback(x, y)
+        self.manager.canvas_click(x, y)
         
     def insert_icon(self, x, y, tk_img):
         icon_id = self.viewer.create_image(x, y, image=tk_img, anchor=tk.NW)
@@ -43,13 +50,13 @@ class PdfViewer(ttk.Frame):
         return icon_id
     
     def change_icon_pos(self, new_x, new_y):
-        self.viewer.coords(self.selected_icon[0], new_x, new_y)
-        x1, y1, x2, y2 = self.viewer.bbox(self.selected_icon[0])
-        self.viewer.coords(self.selected_icon[1], x1, y1, x2, y2)
+        self.viewer.coords(self.selected_icon["icon_id"], new_x, new_y)
+        x1, y1, x2, y2 = self.viewer.bbox(self.selected_icon["icon_id"])
+        self.viewer.coords(self.selected_icon["border_id"], x1, y1, x2, y2)
 
     def change_icon_size(self, new_tk_img):
-        self.viewer.itemconfig(self.selected_icon[0], image=new_tk_img)
-        x1, y1, x2, y2 = self.viewer.bbox(self.selected_icon[0])
+        self.viewer.itemconfig(self.selected_icon["icon_id"], image=new_tk_img)
+        x1, y1, x2, y2 = self.viewer.bbox(self.selected_icon["icon_id"])
 
         border_id = self.viewer.create_rectangle(
             x1, y1, x2, y2,
@@ -57,9 +64,9 @@ class PdfViewer(ttk.Frame):
             width=4
         )
         
-        self.viewer.tag_lower(border_id, self.selected_icon[0])
-        self.viewer.delete(self.selected_icon[1])
-        self.selected_icon = (self.selected_icon[0], border_id)
+        self.viewer.tag_lower(border_id, self.selected_icon["icon_id"])
+        self.viewer.delete(self.selected_icon["border_id"])
+        self.selected_icon["border_id"] = border_id
 
     
     def on_icon_click(self, event):
@@ -67,10 +74,9 @@ class PdfViewer(ttk.Frame):
         self.select_icon(icon_id)
 
     def select_icon(self, icon_id):
-
-        if self.selected_icon[0] != icon_id:
-            if self.selected_icon[1]:
-                self.viewer.delete(self.selected_icon[1])
+        if self.selected_icon["icon_id"] != icon_id:
+            if self.selected_icon["border_id"]:
+                self.viewer.delete(self.selected_icon["border_id"])
 
             x1, y1, x2, y2 = self.viewer.bbox(icon_id)
 
@@ -80,12 +86,21 @@ class PdfViewer(ttk.Frame):
                 width=4
             )
             self.viewer.tag_lower(border_id, icon_id)
-            self.selected_icon = (icon_id, border_id)
+            self.selected_icon["icon_id"] = icon_id
+            self.selected_icon["border_id"] = border_id
 
             self.manager.load_selected_icon_info(icon_id)
+            self.viewer.focus_set()
         else:
-            self.viewer.delete(self.selected_icon[1])
-            self.selected_icon = (None, None)
+            self.viewer.delete(self.selected_icon["border_id"])
+            self.selected_icon["icon_id"] = None
+            self.selected_icon["border_id"] = None
+            self.manager.empty_icon_info()
+    
+    def delete_selected(self, event):
+        self.viewer.delete(self.selected_icon["icon_id"])
+        self.viewer.delete(self.selected_icon["border_id"])
+        self.manager.delete_selected_icon(self.selected_icon["icon_id"])
 
     def delete_icon(self, icon_id):
         self.viewer.delete(icon_id)

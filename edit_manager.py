@@ -9,11 +9,6 @@ from widgets.toolbar import Toolbar
 from pdf_model import PdfModel
 import fitz
 
-# select pdf from file
-# add icons from file
-# select output folder and name edited file
-# insert text
-
 class EditManager():
     def __init__(self, root):
         self.root = root
@@ -30,42 +25,50 @@ class EditManager():
         self.pdf_viewer = None
         self.toolbar = Toolbar(self.mainframe, self)
 
-    def canvas_click_callback(self, x, y):
-        icon_filename = self.toolbar.selected_icon
-        if icon_filename:
-            if icon_filename not in self.model.icons_inserted_tk_imgs.keys():
-                tk_img = self.resize_icon(icon_filename, 60, 60) 
-                self.model.store_icon_ref(icon_filename, tk_img)
+    def canvas_click(self, x, y):
+        img_path = self.toolbar.selected_insert_icon_btn
+        if img_path:
+            if img_path not in self.model.icons_inserted_tk_imgs.keys():
+                tk_img = self.process_img(img_path, 60, 60) 
+                self.model.store_icon_ref(img_path, tk_img)
 
-            icon_model = self.model.generate_icon_model(icon_filename, x, y)
-            inserted_id = self.pdf_viewer.insert_icon(x, y, icon_model.tk_img)
-            icon_model.set_id(inserted_id)
+            icon_model = self.model.generate_icon_model(img_path, x, y)
+            icon_id = self.pdf_viewer.insert_icon(x, y, icon_model.tk_img)
+            icon_model.set_id(icon_id)
             self.model.store_inserted_icon_model(icon_model)
-            self.pdf_viewer.select_icon(inserted_id)
+            self.pdf_viewer.select_icon(icon_id)
 
-    def resize_icon(self, filename, width, height):
-        path = os.path.join(c.input_folder, filename)
-        img = Image.open(path).convert("RGBA")
+    def process_img(self, img_path, width, height):
+        img = Image.open(img_path).convert("RGBA")
         img = img.resize((width, height))
         # img = ImageOps.exif_transpose(img)
         tk_img = ImageTk.PhotoImage(img)
         return tk_img
     
     def change_icon_size(self, prop, value):
-        icon_model = self.model.icons_models[self.pdf_viewer.selected_icon[0]]
+        icon_model = self.model.icons_models[self.pdf_viewer.selected_icon["icon_id"]]
         new_size = icon_model.update_size(prop, value)
-        new_tk_img = self.resize_icon(icon_model.filename, *new_size)
-        self.model.store_icon_ref(self.pdf_viewer.selected_icon[0], new_tk_img)
+        new_tk_img = self.process_img(icon_model.img_path, *new_size)
+        self.model.store_icon_ref(self.pdf_viewer.selected_icon["icon_id"], new_tk_img)
         icon_model.update_tk_img(new_tk_img)
         self.pdf_viewer.change_icon_size(new_tk_img)
 
     def change_icon_pos(self, prop, value):
-        new_pos = self.model.icons_models[self.pdf_viewer.selected_icon[0]].update_pos(prop, value)
+        new_pos = self.model.icons_models[self.pdf_viewer.selected_icon["icon_id"]].update_pos(prop, value)
         self.pdf_viewer.change_icon_pos(*new_pos)
     
     def load_selected_icon_info(self, icon_id):
         icon_model = self.model.icons_models[icon_id]
-        self.toolbar.populate_entries(icon_model.get_model_size_pos())
+        self.toolbar.populate_entries(icon_model.get_model_size_pos(), "normal")
+
+    def empty_icon_info(self):
+        params = {
+            "width": 0,
+            "height": 0,
+            "canvas_x": 0,
+            "canvas_y": 0
+        }
+        self.toolbar.populate_entries(params, "readonly")
 
     def open_pdf(self):
         file_path = filedialog.askopenfilename(
@@ -82,12 +85,15 @@ class EditManager():
 
             self.pdf_viewer = Viewer(self.mainframe, self, pdf_params)
 
-    def add_icon_btn(self):
+    def load_icon_btn(self):
         file_path = filedialog.askopenfilename(
             title="Add icon",
         )
         if file_path.endswith((".png", ".jpg", ".jpeg")):
             return file_path
+        
+    def delete_selected_icon(self, icon_id):
+        self.model.delete_icon(icon_id)
 
     def save_pdf(self):
         if self.model.pdf_path:
@@ -98,7 +104,6 @@ class EditManager():
                 y_coord = icon.canvas_y - y_diff
                 cx = icon.canvas_x + icon.width / 2
                 cy = y_coord + icon.height / 2
-                # cx, cy = fitz.Point(coords[1], y_coord) * page.derotation_matrix
                 cx, cy = fitz.Point(cx, cy) * page.derotation_matrix
 
                 r_angle = 0
@@ -120,7 +125,7 @@ class EditManager():
 
                 page.insert_image(
                     rect,
-                    filename=os.path.join(c.input_folder, icon.filename),
+                    filename=icon.img_path,
                     keep_proportion=False,
                     rotate = r_angle
                 )

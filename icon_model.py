@@ -1,17 +1,17 @@
 
 class IconModel():
-    def __init__(self, filename, tk_img, x, y, page):
-        self.inserted_id = 0
+    def __init__(self, img_path, tk_img, x, y, page):
+        self.icon_id = 0
         self.tk_img = tk_img
-        self.filename = filename
+        self.img_path = img_path
         self.width = 60
         self.height = 60
         self.page = page
         self.canvas_x = x
         self.canvas_y = y
 
-    def set_id(self, inserted_id):
-        self.inserted_id = inserted_id
+    def set_id(self, icon_id):
+        self.icon_id = icon_id
 
     def get_model_size_pos(self):
         return {

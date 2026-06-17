@@ -5,7 +5,7 @@ import fitz
 import consts as c
 import os
 from PIL import Image, ImageTk
-from widgets.icon_btn import IconBtn as IB
+from widgets.insert_icon_btn import InsertIconBtn as IB
 
 class Toolbar(ttk.Frame):
     def __init__(self, parent, manager):
@@ -13,17 +13,17 @@ class Toolbar(ttk.Frame):
         self.manager = manager
 
         self.grid(column=0, row=0, sticky=tk.N)
-        self.btns = {}
-        self.selected_icon = None
+        self.insert_icon_btns = {}
+        self.selected_insert_icon_btn = None
 
-        save_btn = ttk.Button(self, text="save pdf", command=self.save_pdf)
-        save_btn.grid(column=0, row=0, pady=5)
+        save_pdf_btn = ttk.Button(self, text="save pdf", command=self.save_pdf)
+        save_pdf_btn.grid(column=0, row=0, pady=5)
 
-        save_btn = ttk.Button(self, text="open pdf", command=self.open_pdf)
-        save_btn.grid(column=0, row=1, pady=5)
+        open_pdf_btn = ttk.Button(self, text="open pdf", command=self.open_pdf)
+        open_pdf_btn.grid(column=0, row=1, pady=5)
 
-        self.add_icon_btn = ttk.Button(self, text="add icon", command=self.add_icon_btn)
-        self.add_icon_btn.grid(column=0, row=2, pady=5)
+        self.load_icon_btn = ttk.Button(self, text="add icon", command=self.load_icon)
+        self.load_icon_btn.grid(column=0, row=2, pady=5)
 
         ttk.Label(self, text="x").grid(column=0, row=3, sticky=tk.W)
         self.x = StringVar()
@@ -49,14 +49,13 @@ class Toolbar(ttk.Frame):
         self.height_entry.grid(column=1, row=6)
         self.height_entry.bind("<Return>", self.on_change_h)
 
-        txt_btn = ttk.Button(self, text="add text")
-        txt_btn.grid(column=0, row=7, pady=5)
+        insert_txt_btn = ttk.Button(self, text="add text")
+        insert_txt_btn.grid(column=0, row=7, pady=5)
 
         self.outer_btns_container = ttk.Frame(self)
         self.outer_btns_container.grid(column=0, row=8, columnspan=2)
         self.btns_canvas_container = tk.Canvas(self.outer_btns_container, height=200, width=100)
         self.btns_canvas_container.grid(row=0, column=0)
-        
         self.inner_btns_container = ttk.Frame(self.btns_canvas_container)
 
         self.btns_canvas_container.create_window(
@@ -87,21 +86,21 @@ class Toolbar(ttk.Frame):
     def open_pdf(self):
         self.manager.open_pdf()
 
-    def add_icon_btn(self):
-        image_path = self.manager.add_icon_btn()
-        if image_path in self.btns.keys():
+    def load_icon(self):
+        img_path = self.manager.load_icon_btn()
+        if img_path in self.insert_icon_btns.keys():
             return
         
-        img = Image.open(image_path)
+        img = Image.open(img_path)
         img = img.resize((60, 60))
         tk_img = ImageTk.PhotoImage(img)
             
-        new_btn = IB(self.inner_btns_container, tk_img, image_path, self.row_index, self)
+        new_btn = IB(self.inner_btns_container, tk_img, img_path, self.row_index, self)
         new_btn.bind("<MouseWheel>", self.on_mousewheel)
         for child in new_btn.winfo_children():
             child.bind("<MouseWheel>", self.on_mousewheel)
 
-        self.btns[image_path] = new_btn
+        self.insert_icon_btns[img_path] = new_btn
         self.row_index += 1
 
     def on_change_x(self, event):
@@ -116,20 +115,26 @@ class Toolbar(ttk.Frame):
     def on_change_h(self, event):
         self.manager.change_icon_size("height", int(self.height.get()))
 
-    def track_selected_icon(self, filename):
-        if self.selected_icon == filename:
-            self.selected_icon = None
+    def track_selected_insert_icon_btn(self, img_path):
+        if self.selected_insert_icon_btn == img_path:
+            self.selected_insert_icon_btn = None
         else:
-            self.selected_icon = filename
+            self.selected_insert_icon_btn = img_path
     
-    def populate_entries(self, icon_data):
+    def populate_entries(self, icon_data, state):
         self.x.set(icon_data["canvas_x"])
         self.y.set(icon_data["canvas_y"])
         self.width.set(icon_data["width"])
         self.height.set(icon_data["height"])
+        self.x_entry.configure(state=state)
+        self.y_entry.configure(state=state)
+        self.height_entry.configure(state=state)
+        self.width_entry.configure(state=state)
 
     def save_pdf(self):
         self.manager.save_pdf()
 
-    def delete_icon_btn(self, icon_filename):
-        self.btns.pop(icon_filename)
+    def delete_insert_icon_btn(self, img_path):
+        if self.selected_insert_icon_btn == img_path:
+            self.selected_insert_icon_btn = None
+        self.insert_icon_btns.pop(img_path)

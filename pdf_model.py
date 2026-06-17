@@ -23,6 +23,9 @@ class PdfModel():
         self.set_pdf_page_num_size()
         self.store_pages()
 
+    def delete_icon(self, icon_id):
+        self.icons_models.pop(icon_id)
+
     def create_output_folder(self):
         os.makedirs(c.output_folder, exist_ok=True)
         
@@ -54,7 +57,7 @@ class PdfModel():
         self.icons_inserted_tk_imgs[filename] = tk_img
 
     def store_inserted_icon_model(self, icon_model):
-        self.icons_models[icon_model.inserted_id] = icon_model
+        self.icons_models[icon_model.icon_id] = icon_model
 
     def generate_icon_model(self, filename, x, y):
         inserted_on_page = self.find_page_number(y)
