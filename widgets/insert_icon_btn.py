@@ -1,5 +1,6 @@
 import tkinter as tk
 from tkinter import ttk
+import consts as c
 
 class InsertIconBtn(ttk.Frame):
     def __init__(self, parent, tk_img, img_path, row, toolbar):
@@ -25,7 +26,7 @@ class InsertIconBtn(ttk.Frame):
         self.detete_btn.place(relx=1.0, rely=0.0, anchor="ne")
 
     def select_icon(self):
-        self.toolbar.track_selected_insert_icon_btn(self.img_path)
+        self.toolbar.toggle_selected_insert_btn(c.InsertType.ICON, self.img_path)
 
     def delete_icon_btn(self):
         self.toolbar.delete_insert_icon_btn(self.img_path)

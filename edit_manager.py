@@ -26,8 +26,13 @@ class EditManager():
         self.toolbar = Toolbar(self.mainframe, self)
 
     def canvas_click(self, x, y):
-        img_path = self.toolbar.selected_insert_icon_btn
-        if img_path:
+        insert_type = self.toolbar.selected_insert_btn["insert_type"]
+        if insert_type == c.InsertType.ICON:
+            if self.pdf_viewer.selected_icon["insert_type"] == c.InsertType.TEXT:
+                text_data = self.pdf_viewer.save_inserted_text()
+
+
+            img_path = self.toolbar.selected_insert_btn["content"]
             if img_path not in self.model.icons_inserted_tk_imgs.keys():
                 tk_img = self.process_img(img_path, 60, 60) 
                 self.model.store_icon_ref(img_path, tk_img)
@@ -37,6 +42,13 @@ class EditManager():
             icon_model.set_id(icon_id)
             self.model.store_inserted_icon_model(icon_model)
             self.pdf_viewer.select_icon(icon_id)
+        elif insert_type == c.InsertType.TEXT:
+            self.pdf_viewer.insert_text_entry(x, y)
+        else: # no active button
+            if self.pdf_viewer.selected_icon["insert_type"] == c.InsertType.TEXT:
+                text_data = self.pdf_viewer.save_inserted_text()
+                self.model.generate_text_model(text_data)
+
 
     def process_img(self, img_path, width, height):
         img = Image.open(img_path).convert("RGBA")

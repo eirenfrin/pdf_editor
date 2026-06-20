@@ -1,6 +1,7 @@
 import tkinter as tk
-from tkinter import ttk
+from tkinter import StringVar, ttk
 from events.observer import Observer
+import consts as c
 
 
 class PdfViewer(ttk.Frame):
@@ -11,12 +12,14 @@ class PdfViewer(ttk.Frame):
         self.grid(column=1, row=0, padx=20)
 
         self.selected_icon = {
+            "insert_type": "",
             "icon_id": None,
             "border_id": None
         }
+
+        self.edited_text_id = ""
         
         self.update_view(pdf_params)
-
 
     def update_view(self, pdf_params):
         self.viewer = tk.Canvas(self, width=pdf_params["page_width"], height=pdf_params["page_height"])
@@ -48,6 +51,106 @@ class PdfViewer(ttk.Frame):
         self.viewer.tag_bind(icon_id, "<Button-1>", self.on_icon_click)
 
         return icon_id
+    
+    def insert_text_entry(self, x, y):
+        style = ttk.Style()
+        style.configure(
+            "Insert.TEntry",
+            font=("Arial", 16)
+        )
+
+        # input_text = StringVar()
+        active_entry = ttk.Entry(self.viewer, style="Insert.TEntry", font=("Arial", 16))
+        active_window = self.viewer.create_window(
+            x, y,
+            window=active_entry,
+            anchor="nw"
+        )
+        if self.selected_icon["insert_type"] == c.InsertType.TEXT:
+            self.save_inserted_text()
+        self.selected_icon["insert_type"] = c.InsertType.TEXT
+        self.selected_icon["icon_id"] = active_entry
+        self.selected_icon["border_id"] = active_window
+        active_entry.focus_set()
+
+        active_entry.bind("<Return>", self.save_inserted_text)
+
+        # if enter - save/delete
+        # if clicked outside - save/delete
+
+    def reset_selected_icon(self):
+        self.selected_icon["insert_type"] = ""
+        self.selected_icon["icon_id"] = ""
+        self.selected_icon["border_id"] = ""
+
+    def save_inserted_text(self, event=None):
+        text_data = {
+            "id": None,
+            "text": None,
+            "x": None,
+            "y": None
+        }
+        active_entry = self.selected_icon["icon_id"]
+        text = active_entry.get().strip()
+        text_data["text"] = text
+
+        if self.edited_text_id:
+            self.save_edit_text_content(text_data)
+
+        text_id = None
+        if text:
+            x, y = self.viewer.coords(self.selected_icon["border_id"])
+            text_id = self.viewer.create_text(
+                x, y,
+                text=text,
+                anchor="nw",
+                font=("Arial", 16)
+            )
+            text_data["id"] = text_id
+            text_data["x"] = x
+            text_data["y"] = y
+
+            self.viewer.tag_bind(
+                text_id,
+                "<Button-1>",
+                self.on_text_click
+            )
+
+        self.viewer.delete(self.selected_icon["border_id"])
+        self.reset_selected_icon()
+        return text_data
+
+    def save_edit_text_content(self, text_data):
+        self.viewer.itemconfigure(
+                self.edited_text_id,
+                text=text_data["text"],
+                state="normal"
+        )
+        self.edited_text_id = ""
+
+    def on_text_click(self, event):
+        text_id = self.viewer.find_withtag("current")[0]
+        if self.edited_text_id:
+            return
+        self.edited_text_id = text_id
+        x, y = self.viewer.coords(text_id)
+
+        active_entry = ttk.Entry(self.viewer, font=("Arial", 16))
+        active_window = self.viewer.create_window(
+            x, y,
+            window=active_entry,
+            anchor="nw"
+        )
+        active_entry.focus_set()
+        active_entry.bind("<Return>", self.save_inserted_text)
+
+        # self.selected_icon["insert_type"] = c.InsertType.TEXT
+        # self.selected_icon["icon_id"] = active_entry
+        # self.selected_icon["border_id"] = active_window
+
+        old_text = self.viewer.itemcget(text_id, "text")
+        active_entry.insert(0, old_text)
+        self.viewer.itemconfigure(text_id, state="hidden")
     
     def change_icon_pos(self, new_x, new_y):
         self.viewer.coords(self.selected_icon["icon_id"], new_x, new_y)

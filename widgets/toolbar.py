@@ -14,7 +14,10 @@ class Toolbar(ttk.Frame):
 
         self.grid(column=0, row=0, sticky=tk.N)
         self.insert_icon_btns = {}
-        self.selected_insert_icon_btn = None
+        self.selected_insert_btn = {
+            "insert_type": "",
+            "content": ""
+        }
 
         save_pdf_btn = ttk.Button(self, text="save pdf", command=self.save_pdf)
         save_pdf_btn.grid(column=0, row=0, pady=5)
@@ -22,8 +25,8 @@ class Toolbar(ttk.Frame):
         open_pdf_btn = ttk.Button(self, text="open pdf", command=self.open_pdf)
         open_pdf_btn.grid(column=0, row=1, pady=5)
 
-        self.load_icon_btn = ttk.Button(self, text="add icon", command=self.load_icon)
-        self.load_icon_btn.grid(column=0, row=2, pady=5)
+        self.new_icon_btn = ttk.Button(self, text="add icon", command=self.create_new_icon_btn)
+        self.new_icon_btn.grid(column=0, row=2, pady=5)
 
         ttk.Label(self, text="x").grid(column=0, row=3, sticky=tk.W)
         self.x = StringVar()
@@ -49,7 +52,7 @@ class Toolbar(ttk.Frame):
         self.height_entry.grid(column=1, row=6)
         self.height_entry.bind("<Return>", self.on_change_h)
 
-        insert_txt_btn = ttk.Button(self, text="add text")
+        insert_txt_btn = ttk.Button(self, text="add text", command=self.select_insert_text_btn)
         insert_txt_btn.grid(column=0, row=7, pady=5)
 
         self.outer_btns_container = ttk.Frame(self)
@@ -86,7 +89,7 @@ class Toolbar(ttk.Frame):
     def open_pdf(self):
         self.manager.open_pdf()
 
-    def load_icon(self):
+    def create_new_icon_btn(self):
         img_path = self.manager.load_icon_btn()
         if img_path in self.insert_icon_btns.keys():
             return
@@ -115,11 +118,16 @@ class Toolbar(ttk.Frame):
     def on_change_h(self, event):
         self.manager.change_icon_size("height", int(self.height.get()))
 
-    def track_selected_insert_icon_btn(self, img_path):
-        if self.selected_insert_icon_btn == img_path:
-            self.selected_insert_icon_btn = None
+    def select_insert_text_btn(self):
+        self.toggle_selected_insert_btn(c.InsertType.TEXT, "")
+
+    def toggle_selected_insert_btn(self, insert_type, content):
+        if (self.selected_insert_btn["content"] == content and insert_type == c.InsertType.ICON) or self.selected_insert_btn["insert_type"] == c.InsertType.TEXT == insert_type:
+            self.selected_insert_btn["insert_type"] = ""
+            self.selected_insert_btn["content"] = ""
         else:
-            self.selected_insert_icon_btn = img_path
+            self.selected_insert_btn["insert_type"] = insert_type
+            self.selected_insert_btn["content"] = content
     
     def populate_entries(self, icon_data, state):
         self.x.set(icon_data["canvas_x"])
@@ -135,6 +143,7 @@ class Toolbar(ttk.Frame):
         self.manager.save_pdf()
 
     def delete_insert_icon_btn(self, img_path):
-        if self.selected_insert_icon_btn == img_path:
-            self.selected_insert_icon_btn = None
+        if self.selected_insert_btn["content"] == img_path:
+            self.selected_insert_btn["insert_type"] = ""
+            self.selected_insert_btn["content"] = ""
         self.insert_icon_btns.pop(img_path)

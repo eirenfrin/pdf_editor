@@ -4,10 +4,10 @@ from PIL import Image, ImageTk
 import consts as c
 from events.subject import Subject
 from icon_model import IconModel
+from text_model import TextModel
 
 class PdfModel():
     def __init__(self, pdf_path=""):
-        super().__init__()
         self.pdf_path = pdf_path
         self.doc = None
         self.num_of_pages = 0
@@ -18,6 +18,8 @@ class PdfModel():
 
         self.icons_models = {}
         self.icons_inserted_tk_imgs = {}
+
+        self.texts_models = {}
 
         self.create_output_folder()
         self.set_pdf_page_num_size()
@@ -64,6 +66,11 @@ class PdfModel():
         new_icon = IconModel(filename, self.icons_inserted_tk_imgs[filename], x, y, inserted_on_page)
 
         return new_icon
+    
+    def generate_text_model(self, text_data):
+        inserted_on_page = self.find_page_number(text_data["y"])
+        new_text = TextModel(text_data["id"], text_data["text"], inserted_on_page, text_data["x"], text_data["y"])
+        self.texts_models[text_data["id"]] = new_text
 
     def find_page_number(self, y):
         clicked_page_number = 0
