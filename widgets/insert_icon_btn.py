@@ -26,7 +26,7 @@ class InsertIconBtn(ttk.Frame):
         self.detete_btn.place(relx=1.0, rely=0.0, anchor="ne")
 
     def select_icon(self):
-        self.toolbar.toggle_selected_insert_btn(c.InsertType.ICON, self.img_path)
+        self.toolbar.toggle_selected_insert_btn(c.InsertTypeEnum.ICON, self.img_path)
 
     def delete_icon_btn(self):
         self.toolbar.delete_insert_icon_btn(self.img_path)

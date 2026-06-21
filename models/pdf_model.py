@@ -3,8 +3,9 @@ import fitz
 from PIL import Image, ImageTk
 import consts as c
 from events.subject import Subject
-from icon_model import IconModel
-from text_model import TextModel
+from models.icon_model import IconModel
+from models.text_model import TextModel
+from models.state_models import TextData
 
 class PdfModel():
     def __init__(self, pdf_path=""):
@@ -25,8 +26,11 @@ class PdfModel():
         self.set_pdf_page_num_size()
         self.store_pages()
 
-    def delete_icon(self, icon_id):
-        self.icons_models.pop(icon_id)
+    def delete_element_model(self, element_ref, insert_type):
+        if insert_type == c.InsertTypeEnum.TEXT:
+            self.texts_models.pop(element_ref)
+        elif insert_type == c.InsertTypeEnum.ICON:
+            self.icons_models.pop(element_ref)
 
     def create_output_folder(self):
         os.makedirs(c.output_folder, exist_ok=True)
@@ -68,9 +72,9 @@ class PdfModel():
         return new_icon
     
     def generate_text_model(self, text_data):
-        inserted_on_page = self.find_page_number(text_data["y"])
-        new_text = TextModel(text_data["id"], text_data["text"], inserted_on_page, text_data["x"], text_data["y"])
-        self.texts_models[text_data["id"]] = new_text
+        inserted_on_page = self.find_page_number(text_data.y)
+        new_text = TextModel(text_data.element_id, text_data.text, inserted_on_page, text_data.x, text_data.y)
+        self.texts_models[text_data.element_id] = new_text
 
     def find_page_number(self, y):
         clicked_page_number = 0

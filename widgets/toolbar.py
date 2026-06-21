@@ -1,11 +1,10 @@
 import tkinter as tk
 from tkinter import StringVar, ttk
-
-import fitz
-import consts as c
-import os
 from PIL import Image, ImageTk
 from widgets.insert_icon_btn import InsertIconBtn as IB
+
+import consts as c
+from models.state_models import SelectedInsertBtn
 
 class Toolbar(ttk.Frame):
     def __init__(self, parent, manager):
@@ -14,10 +13,7 @@ class Toolbar(ttk.Frame):
 
         self.grid(column=0, row=0, sticky=tk.N)
         self.insert_icon_btns = {}
-        self.selected_insert_btn = {
-            "insert_type": "",
-            "content": ""
-        }
+        self.selected_insert_btn = SelectedInsertBtn(c.InsertTypeEnum.NONE, "")
 
         save_pdf_btn = ttk.Button(self, text="save pdf", command=self.save_pdf)
         save_pdf_btn.grid(column=0, row=0, pady=5)
@@ -119,15 +115,15 @@ class Toolbar(ttk.Frame):
         self.manager.change_icon_size("height", int(self.height.get()))
 
     def select_insert_text_btn(self):
-        self.toggle_selected_insert_btn(c.InsertType.TEXT, "")
+        self.toggle_selected_insert_btn(c.InsertTypeEnum.ENTRY, "")
 
     def toggle_selected_insert_btn(self, insert_type, content):
-        if (self.selected_insert_btn["content"] == content and insert_type == c.InsertType.ICON) or self.selected_insert_btn["insert_type"] == c.InsertType.TEXT == insert_type:
-            self.selected_insert_btn["insert_type"] = ""
-            self.selected_insert_btn["content"] = ""
+        if (self.selected_insert_btn.content == content and insert_type == c.InsertTypeEnum.ICON) or self.selected_insert_btn.insert_type == c.InsertTypeEnum.ENTRY == insert_type:
+            self.selected_insert_btn.insert_type = c.InsertTypeEnum.NONE
+            self.selected_insert_btn.content = ""
         else:
-            self.selected_insert_btn["insert_type"] = insert_type
-            self.selected_insert_btn["content"] = content
+            self.selected_insert_btn.insert_type = insert_type
+            self.selected_insert_btn.content = content
     
     def populate_entries(self, icon_data, state):
         self.x.set(icon_data["canvas_x"])
@@ -143,7 +139,7 @@ class Toolbar(ttk.Frame):
         self.manager.save_pdf()
 
     def delete_insert_icon_btn(self, img_path):
-        if self.selected_insert_btn["content"] == img_path:
-            self.selected_insert_btn["insert_type"] = ""
-            self.selected_insert_btn["content"] = ""
+        if self.selected_insert_btn.content == img_path:
+            self.selected_insert_btn.insert_type = c.InsertTypeEnum.NONE
+            self.selected_insert_btn.content = ""
         self.insert_icon_btns.pop(img_path)
