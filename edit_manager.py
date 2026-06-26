@@ -141,7 +141,6 @@ class EditManager():
             fontfile="C:/Windows/Fonts/arial.ttf"
         )
 
-
     def save_pdf(self):
         if self.model.pdf_path:
             for icon in self.model.icons_models_refs.values():
@@ -176,6 +175,7 @@ class EditManager():
                     keep_proportion=False,
                     rotate = r_angle
                 )
+
             for text in self.model.texts_models_refs.values():
                 page = self.model.doc[text.page_number]
                 self.load_font(page)

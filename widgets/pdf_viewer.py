@@ -181,8 +181,8 @@ class PdfViewer(ttk.Frame):
             self.manager.empty_element_info()
     
     def delete_selected(self, event):
+        self.manager.delete_element_model()
         self.viewer.delete(self.selected_element.element_ref)
         self.unselect_element()
-        self.manager.delete_element_model()
 
 
