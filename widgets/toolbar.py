@@ -137,10 +137,10 @@ class Toolbar(ttk.Frame):
         self.manager.save_pdf()
 
     def on_change_x(self, event):
-        self.manager.change_icon_pos("canvas_x", float(self.canvas_x.get()))
+        self.manager.change_element_pos("canvas_x", float(self.canvas_x.get()))
 
     def on_change_y(self, event):
-        self.manager.change_icon_pos("canvas_y", float(self.canvas_y.get()))
+        self.manager.change_element_pos("canvas_y", float(self.canvas_y.get()))
 
     def on_change_width(self, event):
         self.manager.change_icon_size("width", int(self.width.get()))
@@ -152,7 +152,7 @@ class Toolbar(ttk.Frame):
         pass
 
     def on_change_text_size(self, event):
-        pass
+        self.manager.change_text_size("size", int(self.text_size.get()))
 
     def insert_text_btn_clicked(self):
         self.toggle_selected_insert_btn(c.InsertTypeEnum.ENTRY, "")
@@ -168,6 +168,8 @@ class Toolbar(ttk.Frame):
             if property in element_properties:
                 var.set(getattr(metadata, property))
                 entry.configure(state="normal")
+                if property == "font":
+                    entry.configure(state="readonly")
             else:
                 var.set("")
                 entry.configure(state="readonly")

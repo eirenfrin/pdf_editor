@@ -24,6 +24,7 @@ class EditManager():
         self.model = None
         self.pdf_viewer = None
         self.toolbar = Toolbar(self.mainframe, self)
+        # print(tkfont.families())
 
     def canvas_click(self, x, y):
         insert_type = self.toolbar.selected_insert_btn.insert_type
@@ -77,11 +78,24 @@ class EditManager():
         icon_model.update_attr("tk_img", new_tk_img)
         self.pdf_viewer.change_icon_size(new_tk_img)
 
-    def change_icon_pos(self, prop, value):
-        icon_model = self.model.icons_models_refs[self.pdf_viewer.selected_element.element_ref]
-        icon_model.update_attr(prop, value)
-        icon_metadata = icon_model.get_size_pos()
-        self.pdf_viewer.change_icon_pos(icon_metadata.canvas_x, icon_metadata.canvas_y)
+    def change_element_pos(self, prop, value):
+        element_type = self.pdf_viewer.selected_element.insert_type
+        if element_type == c.InsertTypeEnum.ICON:
+            icon_model = self.model.icons_models_refs[self.pdf_viewer.selected_element.element_ref]
+            icon_model.update_attr(prop, value)
+            icon_metadata = icon_model.get_size_pos()
+            self.pdf_viewer.change_element_pos(icon_metadata.canvas_x, icon_metadata.canvas_y)
+        elif element_type == c.InsertTypeEnum.TEXT:
+            text_model = self.model.texts_models_refs[self.pdf_viewer.selected_element.element_ref]
+            text_model.update_attr(prop, value)
+            text_metadata = text_model.get_style_pos()
+            self.pdf_viewer.change_element_pos(text_metadata.canvas_x, text_metadata.canvas_y)
+
+    def change_text_size(self, prop, value):
+        text_model = self.model.texts_models_refs[self.pdf_viewer.selected_element.element_ref]
+        text_model.update_attr(prop, value)
+        text_metadata = text_model.get_style_pos()
+        self.pdf_viewer.change_text_size(text_metadata.size)
     
     def load_selected_icon_info(self, icon_id):
         icon_model = self.model.icons_models_refs[icon_id]
@@ -169,17 +183,14 @@ class EditManager():
                 ascent = f.metrics("ascent")
 
                 x0, y0, x1, y1 = self.pdf_viewer.viewer.bbox(text.id)
-                print(x0, y0, x1, y1)
-                print("canvas x ", text.canvas_x)
-                print("canvas y ", text.canvas_y)
                 y_diff = self.model.page_height*text.page_number
                 y_coord = y0 - y_diff
                 y_corrected = y_coord + ascent
                 page.insert_text(
                     (text.canvas_x, y_corrected), 
                     text.content,
-                    fontsize=c.DEFAULT_TEXT_SIZE*c.TK_SCALE,
-                    fontname=c.DEFAULT_TEXT_FONT
+                    fontsize=text.size*c.tk_scale,
+                    fontname=text.font
                 )
 
             save_path = filedialog.asksaveasfilename(

@@ -24,6 +24,6 @@ DEFAULT_TEXT_FONT = "Arial"
 # pdf
 DEFAULT_OUTPUT_FILENAME = "edited.pdf"
 
-TK_SCALE = 1.334646962233169
+tk_scale = None
 
 

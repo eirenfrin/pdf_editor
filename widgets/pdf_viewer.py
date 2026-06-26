@@ -1,5 +1,6 @@
 import tkinter as tk
 from tkinter import StringVar, ttk
+import tkinter.font as tkfont
 from events.observer import Observer
 import consts as c
 from models.data_classes import SelectedCanvasElement, TextSnapshot
@@ -49,6 +50,7 @@ class PdfViewer(ttk.Frame):
     
     def insert_text_entry(self, x, y):
         self.unselect_element()
+        self.manager.empty_element_info()
         self.new_text_in_progress = True
         style = ttk.Style()
         style.configure(
@@ -72,9 +74,9 @@ class PdfViewer(ttk.Frame):
 
     def process_text_entry(self, event):
         text_data = self.manager.process_text_entry(c.ClickedTypeEnum.ENTER)
-        self.select_element(text_data.id, c.InsertTypeEnum.ENTRY)
+        self.select_element(text_data.id, c.InsertTypeEnum.TEXT)
 
-    def reset_selected_icon(self):
+    def reset_selected_element(self):
         self.selected_element = SelectedCanvasElement(c.InsertTypeEnum, None, None)
 
     def save_inserted_text(self, event=None):
@@ -84,7 +86,7 @@ class PdfViewer(ttk.Frame):
 
         if not text:
             self.unselect_element()
-            self.reset_selected_icon()
+            self.reset_selected_element()
             self.new_text_in_progress = False
             return text_data
 
@@ -108,13 +110,22 @@ class PdfViewer(ttk.Frame):
         self.new_text_in_progress = False
         return text_snapshot
     
-    def change_icon_pos(self, new_x, new_y):
+    def change_element_pos(self, new_x, new_y):
         self.viewer.coords(self.selected_element.element_ref, new_x, new_y)
         x1, y1, x2, y2 = self.viewer.bbox(self.selected_element.element_ref)
         self.viewer.coords(self.selected_element.border_ref, x1, y1, x2, y2)
 
     def change_icon_size(self, new_tk_img):
         self.viewer.itemconfig(self.selected_element.element_ref, image=new_tk_img)
+        self.update_border_size()
+
+    def change_text_size(self, new_size):
+        font = tkfont.Font(font=self.viewer.itemcget(self.selected_element.element_ref, "font"))
+        font.configure(size=new_size)
+        self.viewer.itemconfig(self.selected_element.element_ref, font=font)
+        self.update_border_size()
+
+    def update_border_size(self):
         x1, y1, x2, y2 = self.viewer.bbox(self.selected_element.element_ref)
 
         border_id = self.viewer.create_rectangle(
@@ -141,7 +152,7 @@ class PdfViewer(ttk.Frame):
 
     def unselect_element(self):
         self.viewer.delete(self.selected_element.border_ref)
-        self.reset_selected_icon()
+        self.reset_selected_element()
 
     def select_element(self, id, insert_type):
         if self.selected_element.element_ref != id:
