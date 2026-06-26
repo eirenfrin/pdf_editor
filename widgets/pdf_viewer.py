@@ -2,7 +2,7 @@ import tkinter as tk
 from tkinter import StringVar, ttk
 from events.observer import Observer
 import consts as c
-from models.state_models import SelectedCanvasElement, TextData
+from models.data_classes import SelectedCanvasElement, TextSnapshot
 
 
 class PdfViewer(ttk.Frame):
@@ -15,14 +15,14 @@ class PdfViewer(ttk.Frame):
         self.selected_element = SelectedCanvasElement(c.InsertTypeEnum.NONE, None, None)
         self.new_text_in_progress = False
         
-        self.update_view(pdf_params)
+        self.display_pdf(pdf_params)
 
-    def update_view(self, pdf_params):
-        self.viewer = tk.Canvas(self, width=pdf_params["page_width"], height=pdf_params["page_height"])
+    def display_pdf(self, pdf_params):
+        self.viewer = tk.Canvas(self, width=pdf_params.page_width, height=pdf_params.page_height)
         self.viewer.grid(row=0, column=0, sticky="nsew")
  
-        for page_num, top_coord in enumerate(pdf_params["pdf_pages_tops_coords"]):
-            self.viewer.create_image(0, top_coord, image=pdf_params["pdf_pages"][page_num], anchor="nw")
+        for page_num, top_coord in enumerate(pdf_params.pdf_pages_tops_coords):
+            self.viewer.create_image(0, top_coord, image=pdf_params.pdf_pages_tk_imgs[page_num], anchor="nw")
 
         self.scrollbar = ttk.Scrollbar(self, orient="vertical", command=self.viewer.yview)
         self.scrollbar.grid(row=0, column=1, sticky=tk.NS)
@@ -39,7 +39,6 @@ class PdfViewer(ttk.Frame):
     def get_mouse_coords(self, event):
         x = self.viewer.canvasx(event.x)
         y = self.viewer.canvasy(event.y)
-        
         self.manager.canvas_click(x, y)
         
     def insert_icon(self, x, y, tk_img):
@@ -49,7 +48,6 @@ class PdfViewer(ttk.Frame):
         return icon_id
     
     def insert_text_entry(self, x, y):
-        print("enter creation mode")
         self.unselect_element()
         self.new_text_in_progress = True
         style = ttk.Style()
@@ -58,12 +56,11 @@ class PdfViewer(ttk.Frame):
             font=("Arial", 16)
         )
 
-        # input_text = StringVar()
         active_entry = ttk.Entry(self.viewer, style="Insert.TEntry", font=("Arial", 16))
         active_window = self.viewer.create_window(
             x, y,
             window=active_entry,
-            anchor="nw"
+            anchor="sw"
         )
 
         self.selected_element.insert_type = c.InsertTypeEnum.ENTRY
@@ -75,13 +72,13 @@ class PdfViewer(ttk.Frame):
 
     def process_text_entry(self, event):
         text_data = self.manager.process_text_entry(c.ClickedTypeEnum.ENTER)
-        self.select_element(text_data.element_id, c.InsertTypeEnum.ENTRY)
+        self.select_element(text_data.id, c.InsertTypeEnum.ENTRY)
 
     def reset_selected_icon(self):
         self.selected_element = SelectedCanvasElement(c.InsertTypeEnum, None, None)
 
     def save_inserted_text(self, event=None):
-        text_data = TextData(None, None, None, None)
+        text_data = TextSnapshot(None, None, None, None)
         active_entry = self.selected_element.element_ref
         text = active_entry.get().strip()
 
@@ -97,10 +94,10 @@ class PdfViewer(ttk.Frame):
         text_id = self.viewer.create_text(
             x, y,
             text=text,
-            anchor="nw",
+            anchor="sw",
             font=("Arial", 16)
         )
-        text_data = TextData(text_id, text, x, y)
+        text_snapshot = TextSnapshot(text_id, text, x, y)
 
         self.viewer.tag_bind(
             text_id,
@@ -109,7 +106,7 @@ class PdfViewer(ttk.Frame):
         )
 
         self.new_text_in_progress = False
-        return text_data
+        return text_snapshot
     
     def change_icon_pos(self, new_x, new_y):
         self.viewer.coords(self.selected_element.element_ref, new_x, new_y)
@@ -136,7 +133,6 @@ class PdfViewer(ttk.Frame):
         text_id = self.viewer.find_withtag("current")[0]
         self.select_element(text_id, c.InsertTypeEnum.TEXT)
 
-    
     def on_icon_click(self, event):
         if self.new_text_in_progress:
             self.manager.process_text_entry(c.ClickedTypeEnum.ELEMENT)
@@ -166,15 +162,16 @@ class PdfViewer(ttk.Frame):
 
             if self.selected_element.insert_type == c.InsertTypeEnum.ICON:
                 self.manager.load_selected_icon_info(id)
+            elif self.selected_element.insert_type == c.InsertTypeEnum.TEXT:
+                self.manager.load_selected_text_info(id)
             self.viewer.focus_set()
         else:
-            self.viewer.delete(self.selected_element.border_ref)
-            self.reset_selected_icon()
-            self.manager.empty_icon_info()
+            self.unselect_element()
+            self.manager.empty_element_info()
     
     def delete_selected(self, event):
         self.viewer.delete(self.selected_element.element_ref)
-        self.viewer.delete(self.selected_element.border_ref)
+        self.unselect_element()
         self.manager.delete_element_model()
 
 

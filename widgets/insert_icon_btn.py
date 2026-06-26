@@ -3,9 +3,9 @@ from tkinter import ttk
 import consts as c
 
 class InsertIconBtn(ttk.Frame):
-    def __init__(self, parent, tk_img, img_path, row, toolbar):
-        self.img_path = img_path
-        self.image = tk_img
+    def __init__(self, parent, tk_img, file_path, row, toolbar):
+        self.file_path = file_path
+        self.tk_img = tk_img
         self.toolbar = toolbar
         self.row = row
 
@@ -26,8 +26,8 @@ class InsertIconBtn(ttk.Frame):
         self.detete_btn.place(relx=1.0, rely=0.0, anchor="ne")
 
     def select_icon(self):
-        self.toolbar.toggle_selected_insert_btn(c.InsertTypeEnum.ICON, self.img_path)
+        self.toolbar.toggle_selected_insert_btn(c.InsertTypeEnum.ICON, self.file_path)
 
     def delete_icon_btn(self):
-        self.toolbar.delete_insert_icon_btn(self.img_path)
+        self.toolbar.delete_insert_icon_btn_ref(self.file_path)
         self.destroy()

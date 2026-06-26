@@ -13,7 +13,17 @@ class ClickedTypeEnum(Enum):
     ENTER = auto()
 
 
-output_folder = "output"
-output_file = "edited.pdf"
+# icon
+DEFAULT_ICON_WIDTH = 60
+DEFAULT_ICON_HEIGHT = 60
+
+# text
+DEFAULT_TEXT_SIZE = 16
+DEFAULT_TEXT_FONT = "Arial"
+
+# pdf
+DEFAULT_OUTPUT_FILENAME = "edited.pdf"
+
+TK_SCALE = 1.334646962233169
 
 

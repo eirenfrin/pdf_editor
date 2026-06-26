@@ -1,12 +1,9 @@
 import tkinter as tk
-from tkinter import ttk
-from widgets.pdf_viewer import PdfViewer as PDFv
-from widgets.toolbar import Toolbar as TB
-from models.pdf_model import PdfModel as Model
 from edit_manager import EditManager as Manager
 
 class App(tk.Tk):
     def __init__(self):
         super().__init__()
+        print(self.tk.call("tk", "scaling"))
 
         self.edit_manager = Manager(self)
