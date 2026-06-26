@@ -3,6 +3,7 @@ import consts as c
 import os
 import tkinter as tk
 from tkinter import ttk, filedialog
+import tkinter.font as tkfont
 from PIL import Image, ImageTk, ImageOps
 from widgets.pdf_viewer import PdfViewer as Viewer
 from widgets.toolbar import Toolbar
@@ -164,14 +165,18 @@ class EditManager():
             for text in self.model.texts_models_refs.values():
                 page = self.model.doc[text.page_number]
                 self.load_font(page)
+                f = tkfont.Font(font=self.pdf_viewer.viewer.itemcget(text.id, "font"))
+                ascent = f.metrics("ascent")
+
                 x0, y0, x1, y1 = self.pdf_viewer.viewer.bbox(text.id)
                 print(x0, y0, x1, y1)
                 print("canvas x ", text.canvas_x)
                 print("canvas y ", text.canvas_y)
                 y_diff = self.model.page_height*text.page_number
-                y_coord = y1 - y_diff
+                y_coord = y0 - y_diff
+                y_corrected = y_coord + ascent
                 page.insert_text(
-                    (text.canvas_x, y_coord), 
+                    (text.canvas_x, y_corrected), 
                     text.content,
                     fontsize=c.DEFAULT_TEXT_SIZE*c.TK_SCALE,
                     fontname=c.DEFAULT_TEXT_FONT
